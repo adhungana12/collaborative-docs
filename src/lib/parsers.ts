@@ -1,10 +1,3 @@
-/**
- * Converts uploaded file content into TipTap-compatible JSON.
- * Handles plain text and basic markdown. Not a full CommonMark parser —
- * just enough to make imported files look reasonable in the editor.
- */
-
-// pull bold (**text**) and italic (*text*) out of a string
 export function parseInline(text: string): any[] {
   const nodes: any[] = [];
   const re = /(\*\*(.+?)\*\*|\*(.+?)\*|([^*]+))/g;
@@ -23,7 +16,6 @@ export function parseInline(text: string): any[] {
   return nodes.length ? nodes : [{ type: 'text', text }];
 }
 
-// plain text → tiptap doc (each line becomes a paragraph)
 export function fromPlainText(raw: string) {
   const lines = raw.split('\n');
   return {
@@ -36,13 +28,11 @@ export function fromPlainText(raw: string) {
   };
 }
 
-// markdown → tiptap doc (headings, lists, paragraphs, inline marks)
 export function fromMarkdown(raw: string) {
   const lines = raw.split('\n');
   const content: any[] = [];
 
   for (const line of lines) {
-    // headings: # ## ###
     const hMatch = line.match(/^(#{1,3})\s+(.+)/);
     if (hMatch) {
       content.push({
@@ -53,7 +43,6 @@ export function fromMarkdown(raw: string) {
       continue;
     }
 
-    // bullet items: - or *
     const bulletMatch = line.match(/^[\-\*]\s+(.+)/);
     if (bulletMatch) {
       const item = {
@@ -69,7 +58,6 @@ export function fromMarkdown(raw: string) {
       continue;
     }
 
-    // numbered items: 1. 2. etc
     const numMatch = line.match(/^\d+\.\s+(.+)/);
     if (numMatch) {
       const item = {
@@ -85,13 +73,11 @@ export function fromMarkdown(raw: string) {
       continue;
     }
 
-    // blank line
     if (!line.trim()) {
       content.push({ type: 'paragraph' });
       continue;
     }
 
-    // everything else is a paragraph
     content.push({ type: 'paragraph', content: parseInline(line) });
   }
 

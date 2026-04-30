@@ -1,30 +1,61 @@
-import { NextResponse } from 'next/server';
-import { cookies } from 'next/headers';
+import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
+import { getUser } from '@/lib/auth';
 
-export async function POST(req: Request) {
-  const userId = cookies().get('userId')?.value;
+const unauthorized = () =>
+  NextResponse.json({ error: 'Not logged in' }, { status: 401 });
 
-  if (!userId) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
+export async function GET() {
+  const me = await getUser();
+  if (!me) return unauthorized();
 
-  const formData = await req.formData();
-  const file = formData.get('file') as File;
+  const owned = await db.document.findMany({
+    where: { ownerId: me.id },
+    include: {
+      owner: { select: { id: true, name: true, email: true } },
+      shares: {
+        include: { user: { select: { id: true, name: true, email: true } } },
+      },
+    },
+    orderBy: { updatedAt: 'desc' },
+  });
 
-  if (!file) {
-    return NextResponse.json({ error: 'No file uploaded' }, { status: 400 });
-  }
+  const shared = await db.document.findMany({
+    where: { shares: { some: { userId: me.id } } },
+    include: {
+      owner: { select: { id: true, name: true, email: true } },
+      shares: {
+        where: { userId: me.id },
+        select: { permission: true },
+      },
+    },
+    orderBy: { updatedAt: 'desc' },
+  });
 
-  const text = await file.text(); // works for txt/md
+  return NextResponse.json({
+    owned: owned.map((d) => ({ ...d, role: 'owner' })),
+    shared: shared.map((d) => ({
+      ...d,
+      role: 'shared',
+      myPermission: d.shares[0]?.permission ?? 'view',
+    })),
+  });
+}
+
+export async function POST(req: NextRequest) {
+  const me = await getUser();
+  if (!me) return unauthorized();
+
+  const body = await req.json().catch(() => ({}));
 
   const doc = await db.document.create({
     data: {
-      title: file.name.replace(/\.[^/.]+$/, ''),
-      content: text,
-      ownerId: userId,
+      title: body.title || 'Untitled',
+      content: body.content || '',
+      ownerId: me.id,
     },
+    include: { owner: { select: { id: true, name: true, email: true } } },
   });
 
-  return NextResponse.json({ document: doc });
+  return NextResponse.json({ document: doc }, { status: 201 });
 }
