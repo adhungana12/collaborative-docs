@@ -18,6 +18,12 @@ npm run dev
 
 Then open http://localhost:3000.
 
+## Live Demo
+
+**App:** https://collaborative-docs-c6hy-adhungana12s-projects.vercel.app
+
+**Video Walkthrough:** https://www.loom.com/share/1fcb78891fc34308a0b21209bbb2d71c
+
 ## Test accounts
 
 There are three seeded users. No passwords — you just pick one from the login screen.
