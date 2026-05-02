@@ -17,7 +17,7 @@
 
 ## Live deployment
 
-**[Insert URL after deploying]**
+**https://collaborative-docs-c6hy-adhungana12s-projects.vercel.app**
 
 Deploy path: Vercel + Vercel Postgres (or Neon). Switch the Prisma provider to `postgresql`, set `DATABASE_URL`, deploy. Takes about 15 minutes.
 
